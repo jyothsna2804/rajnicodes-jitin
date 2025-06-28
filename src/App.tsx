@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { Check, ChevronDown, ChevronUp, Star, Shield, Clock, Brain, Zap, Heart, Users, Calendar, Mail, Car, ShoppingBag, Dumbbell, Gift, ArrowRight, Play, Menu, X, Instagram, Twitter, Linkedin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, ChevronDown, ChevronUp, Star, Shield, Clock, Brain, Zap, Heart, Users, Calendar, Mail, Car, ShoppingBag, Dumbbell, Gift, ArrowRight, Play, Menu, X, Instagram, Twitter, Linkedin, LogOut } from 'lucide-react';
 import AuthModal from './components/AuthModal';
+import { useAuth } from './hooks/useAuth';
+import { authHelpers } from './lib/supabase';
 
 function App() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset'>('signup');
+  
+  const { user, loading, isAuthenticated } = useAuth();
 
   const toggleFaq = (index: number) => {
     setExpandedFaq(expandedFaq === index ? null : index);
@@ -15,6 +19,11 @@ function App() {
   const openAuthModal = (mode: 'login' | 'signup' | 'reset' = 'signup') => {
     setAuthMode(mode);
     setAuthModalOpen(true);
+    setMobileMenuOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await authHelpers.signOut();
     setMobileMenuOpen(false);
   };
 
@@ -41,6 +50,19 @@ function App() {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#101010] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#00FFAB] to-[#1F51FF] rounded-2xl flex items-center justify-center mx-auto mb-4 voice-calm">
+            <Brain className="w-8 h-8 text-[#101010] icon-hover" strokeWidth={1.5} />
+          </div>
+          <div className="w-8 h-8 border-2 border-[#00FFAB]/30 border-t-[#00FFAB] rounded-full loading-ring mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#101010] font-body particle-field">
       {/* Navigation */}
@@ -58,18 +80,36 @@ function App() {
               <a href="#features" className="text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body icon-hover">Features</a>
               <a href="#pricing" className="text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body icon-hover">Pricing</a>
               <a href="#privacy" className="text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body icon-hover">Privacy</a>
-              <button 
-                onClick={() => openAuthModal('login')}
-                className="text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body icon-hover"
-              >
-                Sign In
-              </button>
-              <button 
-                onClick={() => openAuthModal('signup')}
-                className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-6 py-2 rounded-full font-header font-semibold btn-lift btn-ripple"
-              >
-                Try Free
-              </button>
+              
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-4">
+                  <span className="text-[#F2F2F2]/70 font-body">
+                    Welcome, {user?.user_metadata?.full_name || user?.email}
+                  </span>
+                  <button 
+                    onClick={handleSignOut}
+                    className="flex items-center space-x-2 text-[#F2F2F2]/70 hover:text-[#FF6B35] font-body icon-hover"
+                  >
+                    <LogOut className="w-4 h-4" strokeWidth={1.5} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => openAuthModal('login')}
+                    className="text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body icon-hover"
+                  >
+                    Sign In
+                  </button>
+                  <button 
+                    onClick={() => openAuthModal('signup')}
+                    className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-6 py-2 rounded-full font-header font-semibold btn-lift btn-ripple"
+                  >
+                    Try Free
+                  </button>
+                </>
+              )}
             </div>
 
             <button 
@@ -88,18 +128,36 @@ function App() {
               <a href="#features" className="block text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body">Features</a>
               <a href="#pricing" className="block text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body">Pricing</a>
               <a href="#privacy" className="block text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body">Privacy</a>
-              <button 
-                onClick={() => openAuthModal('login')}
-                className="block w-full text-left text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body"
-              >
-                Sign In
-              </button>
-              <button 
-                onClick={() => openAuthModal('signup')}
-                className="w-full bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-6 py-2 rounded-full font-header font-semibold btn-ripple"
-              >
-                Try Free
-              </button>
+              
+              {isAuthenticated ? (
+                <>
+                  <div className="text-[#F2F2F2]/70 font-body py-2">
+                    Welcome, {user?.user_metadata?.full_name || user?.email}
+                  </div>
+                  <button 
+                    onClick={handleSignOut}
+                    className="flex items-center space-x-2 text-[#F2F2F2]/70 hover:text-[#FF6B35] font-body"
+                  >
+                    <LogOut className="w-4 h-4" strokeWidth={1.5} />
+                    <span>Sign Out</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => openAuthModal('login')}
+                    className="block w-full text-left text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body"
+                  >
+                    Sign In
+                  </button>
+                  <button 
+                    onClick={() => openAuthModal('signup')}
+                    className="w-full bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-6 py-2 rounded-full font-header font-semibold btn-ripple"
+                  >
+                    Try Free
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -118,13 +176,20 @@ function App() {
           <p className="font-body text-xl md:text-2xl text-[#F2F2F2]/80 mb-12 max-w-4xl mx-auto leading-relaxed">
             From booking cabs to planning weekends to replying to emails—RajniAI handles your busy life, so you can live like a superstar.
           </p>
-          <button 
-            onClick={() => openAuthModal('signup')}
-            className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-12 py-4 rounded-full text-lg font-header font-bold btn-lift btn-ripple inline-flex items-center space-x-2"
-          >
-            <span>Try RajniAI Free</span>
-            <ArrowRight className="w-5 h-5 icon-hover" strokeWidth={1.5} />
-          </button>
+          {!isAuthenticated ? (
+            <button 
+              onClick={() => openAuthModal('signup')}
+              className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-12 py-4 rounded-full text-lg font-header font-bold btn-lift btn-ripple inline-flex items-center space-x-2"
+            >
+              <span>Try RajniAI Free</span>
+              <ArrowRight className="w-5 h-5 icon-hover" strokeWidth={1.5} />
+            </button>
+          ) : (
+            <div className="glass-panel p-6 rounded-2xl border border-[#00FFAB]/30 inline-block">
+              <h3 className="font-header text-xl font-bold text-[#00FFAB] mb-2">Welcome to RajniAI!</h3>
+              <p className="font-body text-[#F2F2F2]/80">You're all set to experience the future of personal AI assistance.</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -164,12 +229,14 @@ function App() {
               <button className="glass-panel text-[#F2F2F2] px-8 py-3 rounded-full btn-lift btn-ripple border border-[#2A2A2A] font-header inline-flex items-center space-x-2">
                 <span>👇 Scroll to Features</span>
               </button>
-              <button 
-                onClick={() => openAuthModal('signup')}
-                className="bg-[#FF6B35] text-[#F2F2F2] px-8 py-3 rounded-full btn-lift btn-ripple font-header inline-flex items-center space-x-2"
-              >
-                <span>🔥 Try Rajni Now</span>
-              </button>
+              {!isAuthenticated && (
+                <button 
+                  onClick={() => openAuthModal('signup')}
+                  className="bg-[#FF6B35] text-[#F2F2F2] px-8 py-3 rounded-full btn-lift btn-ripple font-header inline-flex items-center space-x-2"
+                >
+                  <span>🔥 Try Rajni Now</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -478,10 +545,16 @@ function App() {
                   ))}
                 </ul>
                 <button 
-                  onClick={() => openAuthModal('signup')}
-                  className={`w-full ${plan.buttonColor} py-3 rounded-full font-header font-semibold btn-lift btn-ripple`}
+                  onClick={() => !isAuthenticated && openAuthModal('signup')}
+                  className={`w-full ${plan.buttonColor} py-3 rounded-full font-header font-semibold btn-lift btn-ripple ${isAuthenticated ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={isAuthenticated}
                 >
-                  {plan.name === 'Starter' ? 'Start Free Trial' : `Choose ${plan.name}`}
+                  {isAuthenticated 
+                    ? 'Already Signed Up' 
+                    : plan.name === 'Starter' 
+                      ? 'Start Free Trial' 
+                      : `Choose ${plan.name}`
+                  }
                 </button>
               </div>
             ))}
@@ -491,12 +564,14 @@ function App() {
             <p className="font-body text-lg text-[#F2F2F2]/80 mb-4">
               Start with the free trial. Upgrade when you're ready to Rajni like a boss.
             </p>
-            <button 
-              onClick={() => openAuthModal('signup')}
-              className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-8 py-3 rounded-full font-header font-semibold btn-lift btn-ripple inline-flex items-center space-x-2"
-            >
-              <span>🚀 Start Free for 14 Days</span>
-            </button>
+            {!isAuthenticated && (
+              <button 
+                onClick={() => openAuthModal('signup')}
+                className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-8 py-3 rounded-full font-header font-semibold btn-lift btn-ripple inline-flex items-center space-x-2"
+              >
+                <span>🚀 Start Free for 14 Days</span>
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -590,17 +665,25 @@ function App() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <button 
-              onClick={() => openAuthModal('signup')}
-              className="bg-[#101010] text-[#00FFAB] px-10 py-4 rounded-full text-lg font-header font-bold btn-lift btn-ripple inline-flex items-center space-x-2"
-            >
-              <span>🔥 Get RajniAI Today – Start Free</span>
-            </button>
+            {!isAuthenticated ? (
+              <button 
+                onClick={() => openAuthModal('signup')}
+                className="bg-[#101010] text-[#00FFAB] px-10 py-4 rounded-full text-lg font-header font-bold btn-lift btn-ripple inline-flex items-center space-x-2"
+              >
+                <span>🔥 Get RajniAI Today – Start Free</span>
+              </button>
+            ) : (
+              <div className="bg-[#101010] text-[#00FFAB] px-10 py-4 rounded-full text-lg font-header font-bold">
+                <span>🎉 Welcome to the RajniAI Family!</span>
+              </div>
+            )}
           </div>
           
-          <p className="font-body text-sm mt-6 text-[#101010]/60">
-            14-day free trial. No card needed. Cancel anytime.
-          </p>
+          {!isAuthenticated && (
+            <p className="font-body text-sm mt-6 text-[#101010]/60">
+              14-day free trial. No card needed. Cancel anytime.
+            </p>
+          )}
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { authHelpers } from '../lib/supabase';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,17 +28,107 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear message when user starts typing
+    if (message) setMessage(null);
+  };
+
+  const validateForm = () => {
+    if (mode === 'signup') {
+      if (!formData.name.trim()) {
+        setMessage({ type: 'error', text: 'Full name is required' });
+        return false;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setMessage({ type: 'error', text: 'Passwords do not match' });
+        return false;
+      }
+      if (formData.password.length < 6) {
+        setMessage({ type: 'error', text: 'Password must be at least 6 characters' });
+        return false;
+      }
+    }
+    
+    if (!formData.email.trim()) {
+      setMessage({ type: 'error', text: 'Email is required' });
+      return false;
+    }
+    
+    if (mode !== 'reset' && !formData.password.trim()) {
+      setMessage({ type: 'error', text: 'Password is required' });
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsLoading(false);
-    onClose();
+    setMessage(null);
+
+    try {
+      if (mode === 'signup') {
+        const { data, error } = await authHelpers.signUp(
+          formData.email,
+          formData.password,
+          formData.name
+        );
+
+        if (error) {
+          setMessage({ type: 'error', text: error.message });
+        } else {
+          setMessage({ 
+            type: 'success', 
+            text: 'Account created successfully! Please check your email to verify your account.' 
+          });
+          // Don't close modal immediately, let user see the success message
+          setTimeout(() => {
+            onClose();
+            resetForm();
+          }, 3000);
+        }
+      } else if (mode === 'login') {
+        const { data, error } = await authHelpers.signIn(
+          formData.email,
+          formData.password
+        );
+
+        if (error) {
+          setMessage({ type: 'error', text: error.message });
+        } else {
+          setMessage({ type: 'success', text: 'Welcome back!' });
+          setTimeout(() => {
+            onClose();
+            resetForm();
+          }, 1500);
+        }
+      } else if (mode === 'reset') {
+        const { error } = await authHelpers.resetPassword(formData.email);
+
+        if (error) {
+          setMessage({ type: 'error', text: error.message });
+        } else {
+          setMessage({ 
+            type: 'success', 
+            text: 'Password reset email sent! Check your inbox.' 
+          });
+          setTimeout(() => {
+            setMode('login');
+            resetForm();
+          }, 3000);
+        }
+      }
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: 'An unexpected error occurred. Please try again.' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -48,6 +140,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     });
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setMessage(null);
   };
 
   const switchMode = (newMode: AuthMode) => {
@@ -82,6 +175,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             {mode === 'reset' && 'Enter your email to reset password'}
           </p>
         </div>
+
+        {/* Message Display */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-xl flex items-center space-x-3 ${
+            message.type === 'success' 
+              ? 'bg-[#00FFAB]/10 border border-[#00FFAB]/30' 
+              : 'bg-[#FF6B35]/10 border border-[#FF6B35]/30'
+          }`}>
+            {message.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-[#00FFAB]" strokeWidth={1.5} />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-[#FF6B35]" strokeWidth={1.5} />
+            )}
+            <p className={`font-body text-sm ${
+              message.type === 'success' ? 'text-[#00FFAB]' : 'text-[#FF6B35]'
+            }`}>
+              {message.text}
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {mode === 'signup' && (

@@ -49,7 +49,7 @@ function App() {
               <a href="#features" className="text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body icon-hover">Features</a>
               <a href="#pricing" className="text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body icon-hover">Pricing</a>
               <a href="#privacy" className="text-[#F2F2F2]/70 hover:text-[#00FFAB] font-body icon-hover">Privacy</a>
-              <button className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-6 py-2 rounded-full font-header font-semibold btn-lift btn-ripple soft-glow">
+              <button className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-6 py-2 rounded-full font-header font-semibold btn-lift btn-ripple">
                 Try Free
               </button>
             </div>
@@ -81,7 +81,7 @@ function App() {
       {/* Section 1: Hero Banner */}
       <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#101010] via-[#2A2A2A]/20 to-[#101010]">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl text-[#F2F2F2] mb-6 leading-tight neon-glow">
+          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl text-[#F2F2F2] mb-6 leading-tight">
             YOUR PERSONAL AI.
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FFAB] to-[#1F51FF]">
@@ -91,7 +91,7 @@ function App() {
           <p className="font-body text-xl md:text-2xl text-[#F2F2F2]/80 mb-12 max-w-4xl mx-auto leading-relaxed">
             From booking cabs to planning weekends to replying to emails—RajniAI handles your busy life, so you can live like a superstar.
           </p>
-          <button className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-12 py-4 rounded-full text-lg font-header font-bold btn-lift btn-ripple soft-glow inline-flex items-center space-x-2">
+          <button className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-12 py-4 rounded-full text-lg font-header font-bold btn-lift btn-ripple inline-flex items-center space-x-2">
             <span>Try RajniAI Free</span>
             <ArrowRight className="w-5 h-5 icon-hover" strokeWidth={1.5} />
           </button>
@@ -103,7 +103,7 @@ function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-header text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6">
-              Not Just Smart. <span className="text-[#FF6B35] neon-glow">SUPERSTAR SMART</span>
+              Not Just Smart. <span className="text-[#FF6B35]">SUPERSTAR SMART</span>
             </h2>
             <p className="font-body text-xl text-[#F2F2F2]/80 max-w-3xl mx-auto">
               You're ambitious, always on the move, and juggling more than most. RajniAI doesn't just catch up — it runs ahead, clearing the path before you even ask.
@@ -134,7 +134,7 @@ function App() {
               <button className="glass-panel text-[#F2F2F2] px-8 py-3 rounded-full btn-lift btn-ripple border border-[#2A2A2A] font-header inline-flex items-center space-x-2">
                 <span>👇 Scroll to Features</span>
               </button>
-              <button className="bg-[#FF6B35] text-[#F2F2F2] px-8 py-3 rounded-full btn-lift btn-ripple hero-glow font-header inline-flex items-center space-x-2">
+              <button className="bg-[#FF6B35] text-[#F2F2F2] px-8 py-3 rounded-full btn-lift btn-ripple font-header inline-flex items-center space-x-2">
                 <span>🔥 Try Rajni Now</span>
               </button>
             </div>
@@ -147,7 +147,7 @@ function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-header text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6">
-              What RajniAI Can Do <span className="text-[#1F51FF] neon-glow">(So You Don't Have To)</span>
+              What RajniAI Can Do <span className="text-[#1F51FF]">(So You Don't Have To)</span>
             </h2>
             <p className="font-body text-xl text-[#F2F2F2]/80 max-w-3xl mx-auto">
               Rajni doesn't just listen — it executes. Here's what your daily life looks like with a personal AI that handles the grind behind the glam.
@@ -226,7 +226,7 @@ function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-header text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6">
-              How RajniAI Works <span className="text-[#00FFAB] neon-glow">(It's Easier Than You Think)</span>
+              How RajniAI Works <span className="text-[#00FFAB]">(It's Easier Than You Think)</span>
             </h2>
             <p className="font-body text-xl text-[#F2F2F2]/80 max-w-3xl mx-auto">
               You don't need 10 apps or a 20-step workflow. Just one message to Rajni—and life starts running smoother.
@@ -288,7 +288,7 @@ function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-header text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6">
-              Who's Already <span className="text-[#FF6B35] neon-glow">ROLLING WITH RAJNI?</span>
+              Who's Already <span className="text-[#FF6B35]">ROLLING WITH RAJNI?</span>
             </h2>
             <p className="font-body text-xl text-[#F2F2F2]/80 max-w-3xl mx-auto">
               Thousands of urban professionals are making RajniAI part of their daily flow. Here's how real users use it—and what they love.
@@ -354,7 +354,7 @@ function App() {
               { metric: "100%", label: "data remains private—always", color: "from-[#FF6B35] to-[#00FFAB]" }
             ].map((stat, index) => (
               <div key={index} className="glass-panel p-6 rounded-xl border border-[#2A2A2A]/50 btn-lift">
-                <div className={`font-display text-3xl bg-gradient-to-r ${stat.color} bg-clip-text text-transparent mb-2 neon-glow`}>{stat.metric}</div>
+                <div className={`font-display text-3xl bg-gradient-to-r ${stat.color} bg-clip-text text-transparent mb-2`}>{stat.metric}</div>
                 <div className="font-body text-[#F2F2F2]/70">{stat.label}</div>
               </div>
             ))}
@@ -367,7 +367,7 @@ function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-header text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6">
-              Plans That <span className="text-[#1F51FF] neon-glow">WORK LIKE YOU DO</span>
+              Plans That <span className="text-[#1F51FF]">WORK LIKE YOU DO</span>
             </h2>
             <p className="font-body text-xl text-[#F2F2F2]/80 max-w-3xl mx-auto">
               Whether you just want to lighten your daily load or unlock full-on concierge mode, Rajni's got a plan that fits.
@@ -381,7 +381,7 @@ function App() {
                 price: "₹0",
                 period: "14-day Free Trial",
                 color: "border-[#00FFAB]/30 glass-panel",
-                buttonColor: "bg-[#00FFAB] hover:bg-[#00FFAB]/90 text-[#101010] soft-glow",
+                buttonColor: "bg-[#00FFAB] hover:bg-[#00FFAB]/90 text-[#101010]",
                 description: "Try Rajni, risk-free. You'll wonder how you ever lived without it.",
                 features: ["Daily planner", "Calendar sync", "Task manager", "Basic chat interface"]
               },
@@ -390,7 +390,7 @@ function App() {
                 price: "₹299",
                 period: "/month",
                 color: "border-[#1F51FF]/30 glass-panel",
-                buttonColor: "bg-[#1F51FF] hover:bg-[#1F51FF]/90 text-[#F2F2F2] cyber-glow",
+                buttonColor: "bg-[#1F51FF] hover:bg-[#1F51FF]/90 text-[#F2F2F2]",
                 description: "For those who want more structure, less chaos.",
                 features: [
                   "Everything in Starter, plus:",
@@ -405,7 +405,7 @@ function App() {
                 price: "₹499",
                 period: "/month",
                 color: "border-[#FF6B35]/50 bg-gradient-to-br from-[#2A2A2A] to-[#2A2A2A]/80",
-                buttonColor: "bg-gradient-to-r from-[#FF6B35] to-[#00FFAB] hover:from-[#FF6B35]/90 hover:to-[#00FFAB]/90 text-[#101010] hero-glow",
+                buttonColor: "bg-gradient-to-r from-[#FF6B35] to-[#00FFAB] hover:from-[#FF6B35]/90 hover:to-[#00FFAB]/90 text-[#101010]",
                 description: "The full Rajni experience. A personal assistant in your pocket.",
                 popular: true,
                 features: [
@@ -455,7 +455,7 @@ function App() {
             <p className="font-body text-lg text-[#F2F2F2]/80 mb-4">
               Start with the free trial. Upgrade when you're ready to Rajni like a boss.
             </p>
-            <button className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-8 py-3 rounded-full font-header font-semibold btn-lift btn-ripple soft-glow inline-flex items-center space-x-2">
+            <button className="bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-8 py-3 rounded-full font-header font-semibold btn-lift btn-ripple inline-flex items-center space-x-2">
               <span>🚀 Start Free for 14 Days</span>
             </button>
           </div>
@@ -467,7 +467,7 @@ function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-header text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6">
-              Rajni Keeps It <span className="text-[#00FFAB] neon-glow">PRIVATE. ALWAYS.</span>
+              Rajni Keeps It <span className="text-[#00FFAB]">PRIVATE. ALWAYS.</span>
             </h2>
             <p className="font-body text-xl text-[#F2F2F2]/80 max-w-3xl mx-auto">
               You're trusting Rajni with your calendar, habits, and decisions — that's not a small thing. So here's our deal:
@@ -476,7 +476,7 @@ function App() {
 
           <div className="grid lg:grid-cols-2 gap-12 mb-16">
             <div className="glass-panel p-8 rounded-2xl border border-[#2A2A2A]/50">
-              <h3 className="font-header text-2xl font-bold text-[#FF6B35] mb-6 flex items-center neon-glow">
+              <h3 className="font-header text-2xl font-bold text-[#FF6B35] mb-6 flex items-center">
                 <Shield className="w-8 h-8 mr-3 icon-hover" strokeWidth={1.5} />
                 What Rajni Never Does
               </h3>
@@ -496,7 +496,7 @@ function App() {
             </div>
 
             <div className="glass-panel p-8 rounded-2xl border border-[#2A2A2A]/50">
-              <h3 className="font-header text-2xl font-bold text-[#00FFAB] mb-6 flex items-center neon-glow">
+              <h3 className="font-header text-2xl font-bold text-[#00FFAB] mb-6 flex items-center">
                 <Check className="w-8 h-8 mr-3 icon-pulse" strokeWidth={1.5} />
                 What Rajni Always Does
               </h3>
@@ -540,7 +540,7 @@ function App() {
       {/* Section 8: Final CTA */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#1F51FF] to-[#00FFAB]">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="font-display text-3xl md:text-5xl mb-6 text-[#101010] neon-glow">
+          <h2 className="font-display text-3xl md:text-5xl mb-6 text-[#101010]">
             READY FOR YOUR PERSONAL AI — <span className="text-[#FF6B35]">SUPERSTAR STYLE?</span>
           </h2>
           <p className="font-body text-xl mb-8 max-w-3xl mx-auto text-[#101010]/80">
@@ -567,7 +567,7 @@ function App() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-header text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6">
-              Frequently Asked <span className="text-[#1F51FF] neon-glow">QUESTIONS</span>
+              Frequently Asked <span className="text-[#1F51FF]">QUESTIONS</span>
             </h2>
             <p className="font-body text-xl text-[#F2F2F2]/80">
               Even superstars ask questions. Here are answers to the ones we get the most.
@@ -603,7 +603,7 @@ function App() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#2A2A2A]/30 to-[#101010]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6 neon-glow">
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-[#F2F2F2] mb-6">
               🌟 THE <span className="text-[#FF6B35]">RAJNI CLUB</span>
             </h2>
             <p className="font-body text-xl text-[#F2F2F2]/80 max-w-3xl mx-auto">
@@ -620,7 +620,7 @@ function App() {
               <p className="font-body text-[#F2F2F2]/70 mb-6">
                 Tell us how Rajni simplified your day. From inbox cleanups to weekend plans — we'd love to hear your Rajni win.
               </p>
-              <button className="bg-[#1F51FF] text-[#F2F2F2] px-6 py-2 rounded-full btn-lift btn-ripple cyber-glow font-header">
+              <button className="bg-[#1F51FF] text-[#F2F2F2] px-6 py-2 rounded-full btn-lift btn-ripple font-header">
                 📩 Share Your Story
               </button>
             </div>
@@ -633,7 +633,7 @@ function App() {
               <p className="font-body text-[#F2F2F2]/70 mb-6">
                 Love Rajni? Tell a friend. They get a free month. You get a free month. Superstar stuff.
               </p>
-              <button className="bg-[#00FFAB] text-[#101010] px-6 py-2 rounded-full btn-lift btn-ripple soft-glow font-header">
+              <button className="bg-[#00FFAB] text-[#101010] px-6 py-2 rounded-full btn-lift btn-ripple font-header">
                 🔗 Invite Now
               </button>
             </div>
@@ -647,10 +647,10 @@ function App() {
                 Get tips, feature drops, and community wisdom from other Rajni users.
               </p>
               <div className="space-y-3">
-                <button className="w-full bg-[#FF6B35] text-[#F2F2F2] px-6 py-2 rounded-full btn-lift btn-ripple hero-glow font-header">
+                <button className="w-full bg-[#FF6B35] text-[#F2F2F2] px-6 py-2 rounded-full btn-lift btn-ripple font-header">
                   💬 Join on Slack
                 </button>
-                <button className="w-full bg-[#1F51FF] text-[#F2F2F2] px-6 py-2 rounded-full btn-lift btn-ripple cyber-glow font-header">
+                <button className="w-full bg-[#1F51FF] text-[#F2F2F2] px-6 py-2 rounded-full btn-lift btn-ripple font-header">
                   📱 Hop into our Telegram
                 </button>
               </div>

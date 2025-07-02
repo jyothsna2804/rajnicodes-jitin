@@ -12,31 +12,62 @@ import {
   Zap,
   Lock
 } from 'lucide-react';
+import GoogleAuthScreen from './GoogleAuthScreen';
+import FetchingPreferencesScreen from './FetchingPreferencesScreen';
 
 interface PersonalizationOnboardingProps {
-  onComplete: (method: 'auto' | 'manual') => void;
+  onComplete: (method: 'auto' | 'manual', preferences?: any) => void;
   onSkip: () => void;
 }
+
+type OnboardingStep = 'choice' | 'google-auth' | 'fetching' | 'manual-setup';
 
 const PersonalizationOnboarding: React.FC<PersonalizationOnboardingProps> = ({ 
   onComplete, 
   onSkip 
 }) => {
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>('choice');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleAutoFetch = async () => {
-    setIsProcessing(true);
-    // Simulate processing time
-    setTimeout(() => {
-      setIsProcessing(false);
-      onComplete('auto');
-    }, 2000);
+  const handleAutoFetch = () => {
+    setCurrentStep('google-auth');
   };
 
   const handleManualSetup = () => {
     onComplete('manual');
   };
 
+  const handleGoogleAuthSuccess = () => {
+    setCurrentStep('fetching');
+  };
+
+  const handleGoogleAuthBack = () => {
+    setCurrentStep('choice');
+  };
+
+  const handleFetchingComplete = (preferences: any) => {
+    onComplete('auto', preferences);
+  };
+
+  // Render different screens based on current step
+  if (currentStep === 'google-auth') {
+    return (
+      <GoogleAuthScreen 
+        onSuccess={handleGoogleAuthSuccess}
+        onBack={handleGoogleAuthBack}
+      />
+    );
+  }
+
+  if (currentStep === 'fetching') {
+    return (
+      <FetchingPreferencesScreen 
+        onComplete={handleFetchingComplete}
+      />
+    );
+  }
+
+  // Default choice screen
   return (
     <div className="min-h-screen bg-[#101010] particle-field">
       <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -180,17 +211,8 @@ const PersonalizationOnboarding: React.FC<PersonalizationOnboardingProps> = ({
                 disabled={isProcessing}
                 className="w-full sm:w-auto bg-gradient-to-r from-[#00FFAB] to-[#1F51FF] text-[#101010] px-8 py-4 rounded-full text-lg font-header font-bold btn-lift btn-ripple disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3"
               >
-                {isProcessing ? (
-                  <>
-                    <div className="w-6 h-6 border-2 border-[#101010]/30 border-t-[#101010] rounded-full loading-ring"></div>
-                    <span>Setting up your preferences...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-6 h-6" strokeWidth={1.5} />
-                    <span>🪄 Yes, Let Rajni Fetch My Preferences</span>
-                  </>
-                )}
+                <Sparkles className="w-6 h-6" strokeWidth={1.5} />
+                <span>🪄 Yes, Let Rajni Fetch My Preferences</span>
               </button>
 
               <button

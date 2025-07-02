@@ -17,13 +17,14 @@ import FetchingPreferencesScreen from './FetchingPreferencesScreen';
 import ReviewCustomizeScreen from './ReviewCustomizeScreen';
 import ManualEntryScreen from './ManualEntryScreen';
 import FinalConfirmationScreen from './FinalConfirmationScreen';
+import VendorsNotFoundScreen from './VendorsNotFoundScreen';
 
 interface PersonalizationOnboardingProps {
   onComplete: (method: 'auto' | 'manual', preferences?: any) => void;
   onSkip: () => void;
 }
 
-type OnboardingStep = 'choice' | 'google-auth' | 'fetching' | 'review' | 'manual-setup' | 'final';
+type OnboardingStep = 'choice' | 'google-auth' | 'fetching' | 'review' | 'manual-setup' | 'vendors-not-found' | 'final';
 
 const PersonalizationOnboarding: React.FC<PersonalizationOnboardingProps> = ({ 
   onComplete, 
@@ -32,6 +33,17 @@ const PersonalizationOnboarding: React.FC<PersonalizationOnboardingProps> = ({
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('choice');
   const [preferences, setPreferences] = useState<any>(null);
   const [onboardingMethod, setOnboardingMethod] = useState<'auto' | 'manual' | null>(null);
+  const [missingVendors, setMissingVendors] = useState<string[]>([]);
+  const [availableVendors, setAvailableVendors] = useState<string[]>([]);
+
+  // Mock function to check vendor availability
+  const checkVendorAvailability = (userVendors: string[]) => {
+    const supportedVendors = ['Swiggy', 'Zomato', 'Amazon', 'Flipkart', 'Ola', 'Uber', 'Blinkit'];
+    const missing = userVendors.filter(vendor => !supportedVendors.includes(vendor));
+    const available = userVendors.filter(vendor => supportedVendors.includes(vendor));
+    
+    return { missing, available };
+  };
 
   const handleAutoFetch = () => {
     setOnboardingMethod('auto');
@@ -58,6 +70,19 @@ const PersonalizationOnboarding: React.FC<PersonalizationOnboardingProps> = ({
 
   const handleReviewComplete = (updatedPreferences: any) => {
     setPreferences(updatedPreferences);
+    
+    // Check if any vendors are not supported
+    if (updatedPreferences.vendors && updatedPreferences.vendors.length > 0) {
+      const { missing, available } = checkVendorAvailability(updatedPreferences.vendors);
+      
+      if (missing.length > 0) {
+        setMissingVendors(missing);
+        setAvailableVendors(available);
+        setCurrentStep('vendors-not-found');
+        return;
+      }
+    }
+    
     setCurrentStep('final');
   };
 
@@ -67,7 +92,32 @@ const PersonalizationOnboarding: React.FC<PersonalizationOnboardingProps> = ({
 
   const handleManualComplete = (manualPreferences: any) => {
     setPreferences(manualPreferences);
+    
+    // Check if any vendors are not supported
+    if (manualPreferences.vendors && manualPreferences.vendors.length > 0) {
+      const { missing, available } = checkVendorAvailability(manualPreferences.vendors);
+      
+      if (missing.length > 0) {
+        setMissingVendors(missing);
+        setAvailableVendors(available);
+        setCurrentStep('vendors-not-found');
+        return;
+      }
+    }
+    
     setCurrentStep('final');
+  };
+
+  const handleVendorsNotFoundContinue = () => {
+    setCurrentStep('final');
+  };
+
+  const handleVendorsNotFoundGoBack = () => {
+    if (onboardingMethod === 'auto') {
+      setCurrentStep('review');
+    } else {
+      setCurrentStep('manual-setup');
+    }
   };
 
   const handleFinalComplete = () => {
@@ -104,6 +154,16 @@ const PersonalizationOnboarding: React.FC<PersonalizationOnboardingProps> = ({
       return (
         <ManualEntryScreen 
           onComplete={handleManualComplete}
+        />
+      );
+
+    case 'vendors-not-found':
+      return (
+        <VendorsNotFoundScreen 
+          missingVendors={missingVendors}
+          availableVendors={availableVendors}
+          onContinue={handleVendorsNotFoundContinue}
+          onGoBack={handleVendorsNotFoundGoBack}
         />
       );
 

@@ -5,12 +5,18 @@ import { authHelpers } from '../lib/supabase';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSignupSuccess?: () => void;
   initialMode?: 'login' | 'signup' | 'reset';
 }
 
 type AuthMode = 'login' | 'signup' | 'reset';
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSignupSuccess,
+  initialMode = 'login' 
+}) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -82,13 +88,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         } else {
           setMessage({ 
             type: 'success', 
-            text: 'Account created successfully! Please check your email to verify your account.' 
+            text: 'Account created successfully! Welcome to RajniAI!' 
           });
-          // Don't close modal immediately, let user see the success message
+          // Call the signup success callback after a short delay
           setTimeout(() => {
             onClose();
             resetForm();
-          }, 3000);
+            if (onSignupSuccess) {
+              onSignupSuccess();
+            }
+          }, 1500);
         }
       } else if (mode === 'login') {
         const { data, error } = await authHelpers.signIn(

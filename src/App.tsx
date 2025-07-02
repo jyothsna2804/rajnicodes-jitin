@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, ChevronDown, ChevronUp, Star, Shield, Clock, Brain, Zap, Heart, Users, Calendar, Mail, Car, ShoppingBag, Dumbbell, Gift, ArrowRight, Play, Menu, X, Instagram, Twitter, Linkedin, LogOut } from 'lucide-react';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
+import PersonalizationOnboarding from './components/PersonalizationOnboarding';
 import { useAuth } from './hooks/useAuth';
 import { authHelpers } from './lib/supabase';
 
@@ -10,6 +11,7 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset'>('signup');
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   const { user, loading, isAuthenticated } = useAuth();
 
@@ -26,6 +28,20 @@ function App() {
   const handleSignOut = async () => {
     await authHelpers.signOut();
     setMobileMenuOpen(false);
+  };
+
+  const handleSignupSuccess = () => {
+    setShowOnboarding(true);
+  };
+
+  const handleOnboardingComplete = (method: 'auto' | 'manual') => {
+    console.log('Onboarding completed with method:', method);
+    setShowOnboarding(false);
+    // Here you would typically save the user's choice and proceed to the next step
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
   };
 
   const faqData = [
@@ -61,6 +77,16 @@ function App() {
           <div className="w-8 h-8 border-2 border-[#00FFAB]/30 border-t-[#00FFAB] rounded-full loading-ring mx-auto"></div>
         </div>
       </div>
+    );
+  }
+
+  // Show onboarding if user just signed up
+  if (showOnboarding) {
+    return (
+      <PersonalizationOnboarding 
+        onComplete={handleOnboardingComplete}
+        onSkip={handleOnboardingSkip}
+      />
     );
   }
 
@@ -800,6 +826,7 @@ function App() {
       <AuthModal 
         isOpen={authModalOpen} 
         onClose={() => setAuthModalOpen(false)} 
+        onSignupSuccess={handleSignupSuccess}
         initialMode={authMode}
       />
     </div>

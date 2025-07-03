@@ -1,0 +1,587 @@
+/*
+  # Complete RajniAI Database Schema Setup
+
+  1. New Tables
+    - `leads` - Core user profiles and lead management
+    - `vendor_accounts` - Connected service accounts (Swiggy, Uber, etc.)
+    - `payment_methods` - Linked payment options
+    - `preferences` - User preferences key-value store
+    - `task_history` - Command history and execution tracking
+    - `budgets` - Smart spending controls
+    - `usage_events` - User interaction analytics
+    - `data_policies` - Privacy and data retention settings
+
+  2. Security
+    - Enable RLS on all tables
+    - Service role policies for backend operations
+    - User-specific access policies
+    - Admin management policies
+
+  3. Performance
+    - Comprehensive indexing strategy
+    - Optimized queries for common operations
+
+  4. Utility Functions
+    - Lead statistics aggregation
+    - Budget status checking
+    - Preference management
+    - Data cleanup utilities
+*/
+
+-- 0) Utilities and Extensions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Create enum types
+DO $$ BEGIN
+  CREATE TYPE lead_status AS ENUM ('new', 'invited', 'installed');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE task_status AS ENUM ('pending', 'done', 'error');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE payment_method_type AS ENUM ('upi', 'card', 'wallet');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- 1) Core Leads Table
+CREATE TABLE IF NOT EXISTS public.leads (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  full_name           text        NOT NULL,
+  email               text        NOT NULL,
+  phone               text,
+  organization_name   text,
+  interest_tags       text[]      DEFAULT '{}',
+  source              text        DEFAULT 'landing_page',
+  status              lead_status DEFAULT 'new',
+  created_at          timestamptz DEFAULT now(),
+  profile_picture_url text
+);
+
+-- Add constraints if they don't exist
+DO $$ BEGIN
+  ALTER TABLE public.leads ADD CONSTRAINT leads_email_valid CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.leads ADD CONSTRAINT leads_email_unique UNIQUE (email);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.leads ADD CONSTRAINT leads_full_name_not_empty CHECK (length(trim(full_name)) > 0);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- 2) Vendor Accounts (Swiggy, Uber, etc.)
+CREATE TABLE IF NOT EXISTS public.vendor_accounts (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id             uuid REFERENCES public.leads(id) ON DELETE CASCADE,
+  vendor_name         text        NOT NULL,
+  account_username    text,
+  linked_at           timestamptz DEFAULT now(),
+  is_default          boolean     DEFAULT false,
+  auth_data           jsonb
+);
+
+DO $$ BEGIN
+  ALTER TABLE public.vendor_accounts ADD CONSTRAINT vendor_accounts_vendor_name_not_empty CHECK (length(trim(vendor_name)) > 0);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- 3) Payment Methods
+CREATE TABLE IF NOT EXISTS public.payment_methods (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id             uuid REFERENCES public.leads(id) ON DELETE CASCADE,
+  method_type         payment_method_type,
+  provider            text,
+  token_reference     text,
+  is_default          boolean DEFAULT false,
+  linked_at           timestamptz DEFAULT now()
+);
+
+DO $$ BEGIN
+  ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_provider_not_empty CHECK (length(trim(provider)) > 0);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- 4) Personal Preferences (K-V store)
+CREATE TABLE IF NOT EXISTS public.preferences (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id             uuid REFERENCES public.leads(id) ON DELETE CASCADE,
+  key                 text        NOT NULL,
+  value               text,
+  source              text        DEFAULT 'user',
+  created_at          timestamptz DEFAULT now(),
+  updated_at          timestamptz DEFAULT now()
+);
+
+DO $$ BEGIN
+  ALTER TABLE public.preferences ADD CONSTRAINT preferences_key_not_empty CHECK (length(trim(key)) > 0);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.preferences ADD CONSTRAINT preferences_unique_key_per_lead UNIQUE (lead_id, key);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- 5) Task History (commands + outcome)
+CREATE TABLE IF NOT EXISTS public.task_history (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id             uuid REFERENCES public.leads(id) ON DELETE CASCADE,
+  raw_command         text        NOT NULL,
+  intent              text,
+  status              task_status DEFAULT 'pending',
+  result_data         jsonb,
+  error_message       text,
+  created_at          timestamptz DEFAULT now(),
+  completed_at        timestamptz
+);
+
+DO $$ BEGIN
+  ALTER TABLE public.task_history ADD CONSTRAINT task_history_raw_command_not_empty CHECK (length(trim(raw_command)) > 0);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- 6) Budgets (Smart Spend Control)
+CREATE TABLE IF NOT EXISTS public.budgets (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id             uuid REFERENCES public.leads(id) ON DELETE CASCADE,
+  monthly_limit       numeric     CHECK (monthly_limit > 0),
+  currency            text        DEFAULT 'INR',
+  alert_threshold_percent int     DEFAULT 80 CHECK (alert_threshold_percent BETWEEN 1 AND 100),
+  current_spent       numeric     DEFAULT 0 CHECK (current_spent >= 0),
+  created_at          timestamptz DEFAULT now(),
+  updated_at          timestamptz DEFAULT now()
+);
+
+-- 7) Usage Events (learning stream)
+CREATE TABLE IF NOT EXISTS public.usage_events (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id             uuid REFERENCES public.leads(id) ON DELETE CASCADE,
+  event_type          text        NOT NULL,
+  raw_input           text,
+  intent              text,
+  metadata            jsonb,
+  timestamp           timestamptz DEFAULT now()
+);
+
+DO $$ BEGIN
+  ALTER TABLE public.usage_events ADD CONSTRAINT usage_events_event_type_not_empty CHECK (length(trim(event_type)) > 0);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- 8) Data-Retention / Privacy Policies
+CREATE TABLE IF NOT EXISTS public.data_policies (
+  lead_id             uuid PRIMARY KEY REFERENCES public.leads(id) ON DELETE CASCADE,
+  auto_purge_days     int         DEFAULT 30 CHECK (auto_purge_days > 0),
+  incognito_mode_enabled boolean  DEFAULT false,
+  data_export_requested boolean  DEFAULT false,
+  data_export_requested_at timestamptz,
+  updated_at          timestamptz DEFAULT now()
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- Row-Level Security (RLS)
+-- ─────────────────────────────────────────────────────────────
+
+-- Enable RLS on all tables
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vendor_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_methods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.task_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.usage_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.data_policies ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist, then recreate them
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Service role full access on leads" ON public.leads;
+  DROP POLICY IF EXISTS "Service role full access on vendor_accounts" ON public.vendor_accounts;
+  DROP POLICY IF EXISTS "Service role full access on payment_methods" ON public.payment_methods;
+  DROP POLICY IF EXISTS "Service role full access on preferences" ON public.preferences;
+  DROP POLICY IF EXISTS "Service role full access on task_history" ON public.task_history;
+  DROP POLICY IF EXISTS "Service role full access on budgets" ON public.budgets;
+  DROP POLICY IF EXISTS "Service role full access on usage_events" ON public.usage_events;
+  DROP POLICY IF EXISTS "Service role full access on data_policies" ON public.data_policies;
+  DROP POLICY IF EXISTS "Admin users can manage leads" ON public.leads;
+  DROP POLICY IF EXISTS "Admin users can manage vendor_accounts" ON public.vendor_accounts;
+  DROP POLICY IF EXISTS "Users can read own lead data" ON public.leads;
+  DROP POLICY IF EXISTS "Users can update own lead data" ON public.leads;
+  DROP POLICY IF EXISTS "Users can insert own lead data" ON public.leads;
+  DROP POLICY IF EXISTS "Users can read own vendor accounts" ON public.vendor_accounts;
+  DROP POLICY IF EXISTS "Users can insert own vendor accounts" ON public.vendor_accounts;
+  DROP POLICY IF EXISTS "Users can update own vendor accounts" ON public.vendor_accounts;
+  DROP POLICY IF EXISTS "Users can delete own vendor accounts" ON public.vendor_accounts;
+  DROP POLICY IF EXISTS "Users can read own payment methods" ON public.payment_methods;
+  DROP POLICY IF EXISTS "Users can insert own payment methods" ON public.payment_methods;
+  DROP POLICY IF EXISTS "Users can update own payment methods" ON public.payment_methods;
+  DROP POLICY IF EXISTS "Users can delete own payment methods" ON public.payment_methods;
+  DROP POLICY IF EXISTS "Users can read own preferences" ON public.preferences;
+  DROP POLICY IF EXISTS "Users can insert own preferences" ON public.preferences;
+  DROP POLICY IF EXISTS "Users can update own preferences" ON public.preferences;
+  DROP POLICY IF EXISTS "Users can delete own preferences" ON public.preferences;
+  DROP POLICY IF EXISTS "Users can read own task history" ON public.task_history;
+  DROP POLICY IF EXISTS "Users can insert own task history" ON public.task_history;
+  DROP POLICY IF EXISTS "Users can update own task history" ON public.task_history;
+  DROP POLICY IF EXISTS "Users can delete own task history" ON public.task_history;
+  DROP POLICY IF EXISTS "Users can read own budget" ON public.budgets;
+  DROP POLICY IF EXISTS "Users can insert own budget" ON public.budgets;
+  DROP POLICY IF EXISTS "Users can update own budget" ON public.budgets;
+  DROP POLICY IF EXISTS "Users can delete own budget" ON public.budgets;
+  DROP POLICY IF EXISTS "Users can read own usage events" ON public.usage_events;
+  DROP POLICY IF EXISTS "Users can insert own usage events" ON public.usage_events;
+  DROP POLICY IF EXISTS "Users can update own usage events" ON public.usage_events;
+  DROP POLICY IF EXISTS "Users can delete own usage events" ON public.usage_events;
+  DROP POLICY IF EXISTS "Users can read own data policies" ON public.data_policies;
+  DROP POLICY IF EXISTS "Users can insert own data policies" ON public.data_policies;
+  DROP POLICY IF EXISTS "Users can update own data policies" ON public.data_policies;
+  DROP POLICY IF EXISTS "Users can delete own data policies" ON public.data_policies;
+END $$;
+
+-- Service role policies (full access for backend operations)
+CREATE POLICY "Service role full access on leads"
+  ON public.leads FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+CREATE POLICY "Service role full access on vendor_accounts"
+  ON public.vendor_accounts FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+CREATE POLICY "Service role full access on payment_methods"
+  ON public.payment_methods FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+CREATE POLICY "Service role full access on preferences"
+  ON public.preferences FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+CREATE POLICY "Service role full access on task_history"
+  ON public.task_history FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+CREATE POLICY "Service role full access on budgets"
+  ON public.budgets FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+CREATE POLICY "Service role full access on usage_events"
+  ON public.usage_events FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+CREATE POLICY "Service role full access on data_policies"
+  ON public.data_policies FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+-- Admin user policies
+CREATE POLICY "Admin users can manage leads"
+  ON public.leads FOR ALL TO authenticated
+  USING (((jwt() ->> 'user_metadata')::jsonb ->> 'role') = 'admin')
+  WITH CHECK (((jwt() ->> 'user_metadata')::jsonb ->> 'role') = 'admin');
+
+CREATE POLICY "Admin users can manage vendor_accounts"
+  ON public.vendor_accounts FOR ALL TO authenticated
+  USING (((jwt() ->> 'user_metadata')::jsonb ->> 'role') = 'admin')
+  WITH CHECK (((jwt() ->> 'user_metadata')::jsonb ->> 'role') = 'admin');
+
+-- User-specific policies for leads
+CREATE POLICY "Users can read own lead data"
+  ON public.leads FOR SELECT TO authenticated
+  USING (id = uid());
+
+CREATE POLICY "Users can update own lead data"
+  ON public.leads FOR UPDATE TO authenticated
+  USING (id = uid()) WITH CHECK (id = uid());
+
+CREATE POLICY "Users can insert own lead data"
+  ON public.leads FOR INSERT TO authenticated
+  WITH CHECK (id = uid());
+
+-- User-specific policies for vendor_accounts
+CREATE POLICY "Users can read own vendor accounts"
+  ON public.vendor_accounts FOR SELECT TO authenticated
+  USING (lead_id = uid());
+
+CREATE POLICY "Users can insert own vendor accounts"
+  ON public.vendor_accounts FOR INSERT TO authenticated
+  WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can update own vendor accounts"
+  ON public.vendor_accounts FOR UPDATE TO authenticated
+  USING (lead_id = uid()) WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can delete own vendor accounts"
+  ON public.vendor_accounts FOR DELETE TO authenticated
+  USING (lead_id = uid());
+
+-- User-specific policies for payment_methods
+CREATE POLICY "Users can read own payment methods"
+  ON public.payment_methods FOR SELECT TO authenticated
+  USING (lead_id = uid());
+
+CREATE POLICY "Users can insert own payment methods"
+  ON public.payment_methods FOR INSERT TO authenticated
+  WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can update own payment methods"
+  ON public.payment_methods FOR UPDATE TO authenticated
+  USING (lead_id = uid()) WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can delete own payment methods"
+  ON public.payment_methods FOR DELETE TO authenticated
+  USING (lead_id = uid());
+
+-- User-specific policies for preferences
+CREATE POLICY "Users can read own preferences"
+  ON public.preferences FOR SELECT TO authenticated
+  USING (lead_id = uid());
+
+CREATE POLICY "Users can insert own preferences"
+  ON public.preferences FOR INSERT TO authenticated
+  WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can update own preferences"
+  ON public.preferences FOR UPDATE TO authenticated
+  USING (lead_id = uid()) WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can delete own preferences"
+  ON public.preferences FOR DELETE TO authenticated
+  USING (lead_id = uid());
+
+-- User-specific policies for task_history
+CREATE POLICY "Users can read own task history"
+  ON public.task_history FOR SELECT TO authenticated
+  USING (lead_id = uid());
+
+CREATE POLICY "Users can insert own task history"
+  ON public.task_history FOR INSERT TO authenticated
+  WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can update own task history"
+  ON public.task_history FOR UPDATE TO authenticated
+  USING (lead_id = uid()) WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can delete own task history"
+  ON public.task_history FOR DELETE TO authenticated
+  USING (lead_id = uid());
+
+-- User-specific policies for budgets
+CREATE POLICY "Users can read own budget"
+  ON public.budgets FOR SELECT TO authenticated
+  USING (lead_id = uid());
+
+CREATE POLICY "Users can insert own budget"
+  ON public.budgets FOR INSERT TO authenticated
+  WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can update own budget"
+  ON public.budgets FOR UPDATE TO authenticated
+  USING (lead_id = uid()) WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can delete own budget"
+  ON public.budgets FOR DELETE TO authenticated
+  USING (lead_id = uid());
+
+-- User-specific policies for usage_events
+CREATE POLICY "Users can read own usage events"
+  ON public.usage_events FOR SELECT TO authenticated
+  USING (lead_id = uid());
+
+CREATE POLICY "Users can insert own usage events"
+  ON public.usage_events FOR INSERT TO authenticated
+  WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can update own usage events"
+  ON public.usage_events FOR UPDATE TO authenticated
+  USING (lead_id = uid()) WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can delete own usage events"
+  ON public.usage_events FOR DELETE TO authenticated
+  USING (lead_id = uid());
+
+-- User-specific policies for data_policies
+CREATE POLICY "Users can read own data policies"
+  ON public.data_policies FOR SELECT TO authenticated
+  USING (lead_id = uid());
+
+CREATE POLICY "Users can insert own data policies"
+  ON public.data_policies FOR INSERT TO authenticated
+  WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can update own data policies"
+  ON public.data_policies FOR UPDATE TO authenticated
+  USING (lead_id = uid()) WITH CHECK (lead_id = uid());
+
+CREATE POLICY "Users can delete own data policies"
+  ON public.data_policies FOR DELETE TO authenticated
+  USING (lead_id = uid());
+
+-- ─────────────────────────────────────────────────────────────
+-- Performance Indexes
+-- ─────────────────────────────────────────────────────────────
+
+-- Leads table indexes
+CREATE INDEX IF NOT EXISTS leads_email_idx ON public.leads (email);
+CREATE INDEX IF NOT EXISTS leads_status_idx ON public.leads (status);
+CREATE INDEX IF NOT EXISTS leads_created_at_idx ON public.leads (created_at DESC);
+CREATE INDEX IF NOT EXISTS leads_source_idx ON public.leads (source);
+
+-- Related tables indexes
+CREATE INDEX IF NOT EXISTS vendor_accounts_lead_id_idx ON public.vendor_accounts (lead_id);
+CREATE INDEX IF NOT EXISTS vendor_accounts_vendor_name_idx ON public.vendor_accounts (vendor_name);
+
+CREATE INDEX IF NOT EXISTS payment_methods_lead_id_idx ON public.payment_methods (lead_id);
+CREATE INDEX IF NOT EXISTS payment_methods_is_default_idx ON public.payment_methods (lead_id, is_default) WHERE is_default = true;
+
+CREATE INDEX IF NOT EXISTS preferences_lead_id_key_idx ON public.preferences (lead_id, key);
+
+CREATE INDEX IF NOT EXISTS task_history_lead_id_idx ON public.task_history (lead_id);
+CREATE INDEX IF NOT EXISTS task_history_created_at_idx ON public.task_history (lead_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS task_history_status_idx ON public.task_history (status);
+
+CREATE INDEX IF NOT EXISTS budgets_lead_id_idx ON public.budgets (lead_id);
+
+CREATE INDEX IF NOT EXISTS usage_events_lead_id_idx ON public.usage_events (lead_id);
+CREATE INDEX IF NOT EXISTS usage_events_timestamp_idx ON public.usage_events (lead_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS usage_events_event_type_idx ON public.usage_events (event_type);
+
+-- ─────────────────────────────────────────────────────────────
+-- Triggers for updated_at columns
+-- ─────────────────────────────────────────────────────────────
+
+-- Create trigger function for updating updated_at column
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Add triggers for tables with updated_at columns
+DROP TRIGGER IF EXISTS update_budgets_updated_at ON public.budgets;
+CREATE TRIGGER update_budgets_updated_at
+  BEFORE UPDATE ON public.budgets
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_preferences_updated_at ON public.preferences;
+CREATE TRIGGER update_preferences_updated_at
+  BEFORE UPDATE ON public.preferences
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_data_policies_updated_at ON public.data_policies;
+CREATE TRIGGER update_data_policies_updated_at
+  BEFORE UPDATE ON public.data_policies
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ─────────────────────────────────────────────────────────────
+-- Utility Functions
+-- ─────────────────────────────────────────────────────────────
+
+-- Get comprehensive lead statistics
+CREATE OR REPLACE FUNCTION get_lead_stats()
+RETURNS TABLE (
+  total_leads bigint,
+  new_leads bigint,
+  invited_leads bigint,
+  installed_leads bigint,
+  leads_today bigint,
+  leads_this_week bigint,
+  leads_this_month bigint
+) 
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT 
+    COUNT(*) as total_leads,
+    COUNT(*) FILTER (WHERE status = 'new') as new_leads,
+    COUNT(*) FILTER (WHERE status = 'invited') as invited_leads,
+    COUNT(*) FILTER (WHERE status = 'installed') as installed_leads,
+    COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) as leads_today,
+    COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '7 days') as leads_this_week,
+    COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '30 days') as leads_this_month
+  FROM public.leads;
+$$;
+
+-- Get user's budget status
+CREATE OR REPLACE FUNCTION get_budget_status(user_lead_id uuid)
+RETURNS TABLE (
+  monthly_limit numeric,
+  current_spent numeric,
+  remaining_budget numeric,
+  percentage_used numeric,
+  alert_threshold_reached boolean
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT 
+    b.monthly_limit,
+    b.current_spent,
+    (b.monthly_limit - b.current_spent) as remaining_budget,
+    ROUND((b.current_spent / b.monthly_limit * 100), 2) as percentage_used,
+    (b.current_spent / b.monthly_limit * 100) >= b.alert_threshold_percent as alert_threshold_reached
+  FROM public.budgets b
+  WHERE b.lead_id = user_lead_id;
+$$;
+
+-- Update preference with timestamp
+CREATE OR REPLACE FUNCTION upsert_preference(
+  user_lead_id uuid,
+  pref_key text,
+  pref_value text,
+  pref_source text DEFAULT 'user'
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result_id uuid;
+BEGIN
+  INSERT INTO public.preferences (lead_id, key, value, source, updated_at)
+  VALUES (user_lead_id, pref_key, pref_value, pref_source, now())
+  ON CONFLICT (lead_id, key)
+  DO UPDATE SET 
+    value = EXCLUDED.value,
+    source = EXCLUDED.source,
+    updated_at = now()
+  RETURNING id INTO result_id;
+  
+  RETURN result_id;
+END;
+$$;
+
+-- Clean up old usage events (for privacy compliance)
+CREATE OR REPLACE FUNCTION cleanup_old_usage_events()
+RETURNS int
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  deleted_count int;
+BEGIN
+  DELETE FROM public.usage_events 
+  WHERE timestamp < (now() - INTERVAL '90 days');
+  
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$;
